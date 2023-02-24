@@ -463,32 +463,47 @@ def login():
     return pages.login_head + pages.bad_login_body
 
 
+def service_start_plc():
+    global openplc_runtime
+    monitor.stop_monitor()
+    openplc_runtime.start_runtime()
+    time.sleep(1)
+    configure_runtime()
+    monitor.cleanup()
+    monitor.parse_st(openplc_runtime.project_file)
+
 @app.route('/start_plc')
 def start_plc():
     global openplc_runtime
     if (flask_login.current_user.is_authenticated == False):
         return flask.redirect(flask.url_for('login'))
     else:
-        monitor.stop_monitor()
-        openplc_runtime.start_runtime()
-        time.sleep(1)
-        configure_runtime()
-        monitor.cleanup()
-        monitor.parse_st(openplc_runtime.project_file)
+        service_start_plc()
         return flask.redirect(flask.url_for('dashboard'))
 
+@app.route("/api/start_plc")
+def api_start_plc():
+    service_start_plc()
+    return flask.Response("", status=200)
+
+def service_stop_plc():
+    global openplc_runtime
+    openplc_runtime.stop_runtime()
+    time.sleep(1)
+    monitor.stop_monitor()
 
 @app.route('/stop_plc')
 def stop_plc():
-    global openplc_runtime
     if (flask_login.current_user.is_authenticated == False):
         return flask.redirect(flask.url_for('login'))
     else:
-        openplc_runtime.stop_runtime()
-        time.sleep(1)
-        monitor.stop_monitor()
+        service_stop_plc()
         return flask.redirect(flask.url_for('dashboard'))
 
+@app.route('/api/stop_plc')
+def api_stop_plc():
+    service_stop_plc()
+    return flask.Response("", status=200)
 
 @app.route('/runtime_logs')
 def runtime_logs():
